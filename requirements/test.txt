@@ -1,0 +1,6 @@
+pytest
+pytest-cache
+pytest-cov
+coverage
+coverage-badge
+flake8
