@@ -44,9 +44,6 @@ class SNSPublisher:
         return arn
 
     def get_topic_arn_by_name(self, topic_name):
-        if topic_name.startswith("arn:"):
-            return topic_name
-
         topic_name = "{}__{}".format(self.prefix, topic_name)
 
         try:
