@@ -1,4 +1,2 @@
 boto3
 cached_property
-
-git+https://github.com/DroneMapp/powerlibs-aws-sns.git@0.0.1
