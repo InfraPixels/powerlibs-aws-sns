@@ -8,13 +8,15 @@ from .exceptions import SNSPublisherError
 
 
 class SNSPublisher:
-    def __init__(self, prefix):
+    def __init__(self, prefix, region_name=None):
         self.prefix = prefix
+        self.region_name = region_name
+
         self.topics = self.get_topics()
 
     @cached_property
     def client(self):
-        return boto3.client('sns')
+        return boto3.client('sns', region_name=self.region_name)
 
     def _get_arns(self, next_token=''):
         try:

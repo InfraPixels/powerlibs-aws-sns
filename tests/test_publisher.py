@@ -14,7 +14,6 @@ def test_topics(mock_boto_client_sns):
         assert len(sns_publisher.topics) == 1
         assert tuple(sns_publisher.topics.values())[0].startswith('arn:aws:region:id:TEST2__test1')
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
 
 
 def test_topic_names(mock_boto_client_sns):
@@ -26,7 +25,6 @@ def test_topic_names(mock_boto_client_sns):
         assert 'TEST__test1' in topics
         assert 'TEST__test2' in topics
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
 
 
 def test_topic_name_is_sns_prefix(mock_boto_client_sns):
@@ -35,7 +33,6 @@ def test_topic_name_is_sns_prefix(mock_boto_client_sns):
         topic = sns_publisher.get_topic_arn_by_name('TEST3')
         assert topic == 'arn:aws:region:id:TEST3__TEST3'
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
 
 
 def test_get_topic_arn_by_name(mock_boto_client_sns):
@@ -47,7 +44,6 @@ def test_get_topic_arn_by_name(mock_boto_client_sns):
         assert arn.endswith('test1')
 
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
 
 
 def test_publish(mock_boto_client_sns):
@@ -57,7 +53,6 @@ def test_publish(mock_boto_client_sns):
         arn = sns_publisher.get_topic_arn_by_name('test1')
 
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
         assert mock_sns.return_value.publish.called
         mock_sns.return_value.publish.assert_called_once_with(
             TopicArn=arn,
@@ -73,7 +68,6 @@ def test_publish_on_nonexistent_topic(mock_boto_client_sns):
         arn = sns_publisher.get_topic_arn_by_name('test_NEW')
 
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
         assert mock_sns.return_value.publish.called
         mock_sns.return_value.publish.assert_called_once_with(
             TopicArn=arn,
@@ -90,7 +84,6 @@ def test_list_topics_client_error(mock_boto_client_sns):
             SNSPublisher(prefix='TEST2')
 
         assert mock_sns.called
-        mock_sns.assert_called_once_with('sns')
         assert not mock_sns.return_value.publish.called
 
 
