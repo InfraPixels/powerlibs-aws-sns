@@ -6,7 +6,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-version = '0.0.5'
+version = '0.0.6'
 
 
 def pip_git_to_setuptools_git(url):
@@ -42,7 +42,7 @@ setup(
     author_email='cleberman@gmail.com',
     url='https://github.com/Dronemapp/powerlibs-aws-sns',
     license=license,
-    packages=['powerlibs.aws.sns'],
+    packages=['powerlibs', 'powerlibs.aws', 'powerlibs.aws.sns'],
     package_data={'': ['LICENSE', 'README.md']},
     include_package_data=True,
     install_requires=requires,
