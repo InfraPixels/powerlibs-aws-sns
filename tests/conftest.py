@@ -5,7 +5,6 @@ import pytest
 
 @pytest.fixture
 def mock_boto_client_sns():
-
     topics_page1 = {
         'Topics': [
             {'TopicArn': 'arn:aws:region:id:TEST__test1'},
@@ -37,4 +36,4 @@ def mock_boto_client_sns():
         create_topic=create_topic,
     )
 
-    return mock.patch('boto3.client', return_value=client)
+    return mock.patch('boto3.resource', return_value=client)

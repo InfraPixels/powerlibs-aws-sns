@@ -1,4 +1,6 @@
 import json
+import logging
+import os
 
 import boto3
 from botocore.exceptions import ClientError
@@ -8,15 +10,24 @@ from .exceptions import SNSPublisherError
 
 
 class SNSPublisher:
-    def __init__(self, prefix, region_name=None):
+    def __init__(self, prefix, aws_access_key_id=None, aws_secret_access_key=None, aws_region=None):
         self.prefix = prefix
-        self.region_name = region_name
 
+        self.aws_region = aws_region or os.environ.get('AWS_REGION', None)
+        self.aws_access_key_id = aws_access_key_id or os.environ['AWS_ACCESS_KEY_ID']
+        self.aws_secret_access_key = aws_secret_access_key or os.environ['AWS_SECRET_ACCESS_KEY']
+
+        self.logger = logging.getLogger()
         self.topics = self.get_topics()
 
     @cached_property
     def client(self):
-        return boto3.client('sns', region_name=self.region_name)
+        return boto3.resource(
+            'sns',
+            region_name=self.aws_region,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+        )
 
     def _get_arns(self, next_token=''):
         try:
@@ -42,6 +53,7 @@ class SNSPublisher:
     def create_topic(self, name):
         return_value = self.client.create_topic(Name=name)
         arn = return_value['TopicArn']
+        self.logger.info('New SNS topic created. name="{}" arn="{}"'.format(name, arn))
         self.topics[name] = arn
         return arn
 
