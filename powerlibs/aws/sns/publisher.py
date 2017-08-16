@@ -6,16 +6,16 @@ import boto3
 from botocore.exceptions import ClientError
 from cached_property import cached_property
 
-from .exceptions import SNSPublisherError
+from .exceptions import SNSPublisherError, TopicNotFound
 
 
 class SNSPublisher:
-    def __init__(self, prefix, aws_access_key_id=None, aws_secret_access_key=None, aws_region=None):
-        self.prefix = prefix
-
+    def __init__(self, aws_access_key_id=None, aws_secret_access_key=None, aws_region=None, create_topics=True):
         self.aws_region = aws_region or os.environ.get('AWS_REGION', None)
         self.aws_access_key_id = aws_access_key_id or os.environ['AWS_ACCESS_KEY_ID']
         self.aws_secret_access_key = aws_secret_access_key or os.environ['AWS_SECRET_ACCESS_KEY']
+
+        self.should_create_topics = create_topics
 
         self.logger = logging.getLogger()
         self.topics = self.get_topics()
@@ -45,8 +45,7 @@ class SNSPublisher:
 
         for arn in self._get_arns():
             key = arn.split(':')[-1]
-            if key.startswith(self.prefix + '__'):
-                topics[key] = arn
+            topics[key] = arn
 
         return topics
 
@@ -58,13 +57,14 @@ class SNSPublisher:
         return arn
 
     def get_topic_arn_by_name(self, topic_name):
-        topic_name = "{}__{}".format(self.prefix, topic_name)
-
         try:
             return self.topics[topic_name]
         except KeyError:
-            arn = self.create_topic(topic_name)
-            return arn
+            if self.should_create_topics:
+                arn = self.create_topic(topic_name)
+                return arn
+            else:
+                raise TopicNotFound("The topic '{}' was not found.".format(topic_name))
 
     def publish(self, topic, message, json_encoder_class=None, structure='json'):
         arn = self.get_topic_arn_by_name(topic)

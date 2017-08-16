@@ -7,93 +7,72 @@ from powerlibs.aws.sns.publisher import SNSPublisher
 from powerlibs.aws.sns.exceptions import SNSPublisherError
 
 
-def test_topics(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST2')
+def test_topics(sns_publisher):
+    assert len(sns_publisher.topics) == 5
 
-        assert len(sns_publisher.topics) == 1
-        assert tuple(sns_publisher.topics.values())[0].startswith('arn:aws:region:id:TEST2__test1')
-        assert mock_sns.called
+    assert 'arn:aws:region:id:TEST2__test1' in sns_publisher.topics.values()
+    assert sns_publisher.mocked_client.called
 
 
-def test_topic_names(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST')
-        topics = sns_publisher.topics
+def test_topic_names(sns_publisher):
+    topics = sns_publisher.topics
 
-        assert len(topics) == 2
-        assert 'TEST__test1' in topics
-        assert 'TEST__test2' in topics
-        assert mock_sns.called
+    assert len(topics) == 5
+    assert 'TEST__test1' in topics
+    assert 'TEST__test2' in topics
+    assert sns_publisher.mocked_client.called
 
 
-def test_topic_name_is_sns_prefix(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST3')
-        topic = sns_publisher.get_topic_arn_by_name('TEST3')
-        assert topic == 'arn:aws:region:id:TEST3__TEST3'
-        assert mock_sns.called
+def test_get_topic_arn_by_name(sns_publisher):
+    arn = sns_publisher.get_topic_arn_by_name('test1')
+
+    assert arn.startswith('arn:')
+    assert arn.endswith('test1')
+
+    assert sns_publisher.mocked_client.called
 
 
-def test_get_topic_arn_by_name(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST')
-        arn = sns_publisher.get_topic_arn_by_name('test1')
+def test_publish(sns_publisher):
+    sns_publisher.publish('test1', 'message')
+    arn = sns_publisher.get_topic_arn_by_name('test1')
 
-        assert arn.startswith('arn:')
-        assert arn.endswith('test1')
-
-        assert mock_sns.called
-
-
-def test_publish(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST')
-        sns_publisher.publish('test1', 'message')
-        arn = sns_publisher.get_topic_arn_by_name('test1')
-
-        assert mock_sns.called
-        assert mock_sns.return_value.publish.called
-        mock_sns.return_value.publish.assert_called_once_with(
-            TopicArn=arn,
-            MessageStructure='json',
-            Message=json.dumps({'default': json.dumps('message')})
-        )
+    assert sns_publisher.mocked_client.called
+    assert sns_publisher.mocked_client.return_value.publish.called
+    sns_publisher.mocked_client.return_value.publish.assert_called_once_with(
+        TopicArn=arn,
+        MessageStructure='json',
+        Message=json.dumps({'default': json.dumps('message')})
+    )
 
 
-def test_publish_on_nonexistent_topic(mock_boto_client_sns):
-    with mock_boto_client_sns as mock_sns:
-        sns_publisher = SNSPublisher(prefix='TEST')
-        sns_publisher.publish('test_NEW', 'message')
-        arn = sns_publisher.get_topic_arn_by_name('test_NEW')
+def test_publish_on_nonexistent_topic(sns_publisher):
+    sns_publisher.publish('test_NEW', 'message')
+    arn = sns_publisher.get_topic_arn_by_name('test_NEW')
 
-        assert mock_sns.called
-        assert mock_sns.return_value.publish.called
-        mock_sns.return_value.publish.assert_called_once_with(
-            TopicArn=arn,
-            MessageStructure='json',
-            Message=json.dumps({'default': json.dumps('message')})
-        )
+    assert sns_publisher.mocked_client.called
+    assert sns_publisher.mocked_client.return_value.publish.called
+    sns_publisher.mocked_client.return_value.publish.assert_called_once_with(
+        TopicArn=arn,
+        MessageStructure='json',
+        Message=json.dumps({'default': json.dumps('message')})
+    )
 
 
 def test_list_topics_client_error(mock_boto_client_sns):
+
     with mock_boto_client_sns as mock_sns:
         mock_sns.side_effect = ClientError({'Error': {'Code': 'Unknown'}}, 'list_topics')
-
         with pytest.raises(SNSPublisherError):
-            SNSPublisher(prefix='TEST2')
+            SNSPublisher()
 
         assert mock_sns.called
         assert not mock_sns.return_value.publish.called
 
 
-def test_sns_publish_client_error(mock_boto_client_sns):
-    with mock_boto_client_sns:
-        publisher = SNSPublisher(prefix='TEST2')
+def test_sns_publish_client_error(sns_publisher):
+    sns_publisher.client.publish = mock.Mock(
+        side_effect=ClientError({'Error': {'Code': 'Unknown'}}, 'list_topics')
+    )
 
-        publisher.client.publish = mock.Mock(
-            side_effect=ClientError({'Error': {'Code': 'Unknown'}}, 'list_topics')
-        )
-
-        with pytest.raises(SNSPublisherError):
-            publisher.publish('test1', 'message')
+    with pytest.raises(SNSPublisherError):
+        sns_publisher.publish('test1', 'message')
