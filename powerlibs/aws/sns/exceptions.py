@@ -4,3 +4,7 @@ class PublisherException(Exception):
 
 class SNSPublisherError(PublisherException):
     pass
+
+
+class TopicNotFound(PublisherException):
+    pass

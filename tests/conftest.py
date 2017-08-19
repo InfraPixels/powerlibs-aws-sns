@@ -2,6 +2,8 @@ from unittest import mock
 
 import pytest
 
+from powerlibs.aws.sns.publisher import SNSPublisher
+
 
 @pytest.fixture
 def mock_boto_client_sns():
@@ -37,3 +39,12 @@ def mock_boto_client_sns():
     )
 
     return mock.patch('boto3.resource', return_value=client)
+
+
+@pytest.fixture
+def sns_publisher(mock_boto_client_sns):
+    with mock_boto_client_sns as mock_sns:
+        sns_publisher = SNSPublisher()
+        sns_publisher.mocked_client = mock_sns
+
+        return sns_publisher
